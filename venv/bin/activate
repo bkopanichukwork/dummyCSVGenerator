@@ -74,3 +74,5 @@ fi
 if [ -n "${BASH:-}" -o -n "${ZSH_VERSION:-}" ] ; then
     hash -r
 fi
+
+export SECRET_KEY="bdv5z*@ebg!^tc4_=$u3@-^34_&ng71o5%+!dj=u@dr&f4^v&k"
