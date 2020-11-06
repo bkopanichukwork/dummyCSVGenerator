@@ -7,7 +7,7 @@
          <h3>Data schemas</h3>
     </div>
     <div class="col-4">
-      <a class="btn btn-success" href="{%url 'schema-create'%}" role="button">New Schema</a>
+      <a class="btn btn-success" href="{%url 'schema_create'%}" role="button">New Schema</a>
     </div>
  </div>
 
@@ -30,8 +30,8 @@
           </td>
           <td>{{schema.date_modified|date:'Y-m-d H:i'}}</td>
           <td>
-              <a href="#">Edit scheme</a>
-              <a href="#" class="text-danger">Delete scheme</a>
+              <a href="{% url 'schema_update' schema.pk%}">Edit scheme</a>
+              <a href="{% url 'schema_delete' schema.pk%}" class="text-danger">Delete scheme</a>
           </td>
         </tr>
     {% endfor %}

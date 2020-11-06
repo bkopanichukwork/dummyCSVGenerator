@@ -3,14 +3,14 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.utils.decorators import method_decorator
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from generator.forms import SchemaForm, SchemaColumnFormSet
 from generator.models import Schema
 
 
 @method_decorator(login_required, name='dispatch')
-class SchemasListView(ListView):
+class SchemasList(ListView):
     def get_queryset(self):
         return Schema.objects.filter(owner=self.request.user)
 
@@ -19,20 +19,11 @@ class SchemasListView(ListView):
     model = Schema
 
 
-@method_decorator(login_required, name='dispatch')
-class SchemaCreateView(CreateView):
+class SchemaView:
     model = Schema
     template_name = 'generator/schema_create.html'
     form_class = SchemaForm
     success_url = '/'
-
-    def get_context_data(self, **kwargs):
-        data = super(SchemaCreateView, self).get_context_data(**kwargs)
-        if self.request.POST:
-            data['schema_columns'] = SchemaColumnFormSet(self.request.POST)
-        else:
-            data['schema_columns'] = SchemaColumnFormSet()
-        return data
 
     def form_valid(self, form):
         context = self.get_context_data()
@@ -44,4 +35,35 @@ class SchemaCreateView(CreateView):
             if schema_columns.is_valid():
                 schema_columns.instance = self.object
                 schema_columns.save()
-        return super(SchemaCreateView, self).form_valid(form)
+        return super(SchemaCreate, self).form_valid(form)
+
+
+@method_decorator(login_required, name='dispatch')
+class SchemaCreate(SchemaView, CreateView):
+
+    def get_context_data(self, **kwargs):
+        data = super(SchemaCreate, self).get_context_data(**kwargs)
+        if self.request.POST:
+            data['schema_columns'] = SchemaColumnFormSet(self.request.POST)
+        else:
+            data['schema_columns'] = SchemaColumnFormSet()
+        return data
+
+
+@method_decorator(login_required, name='dispatch')
+class SchemaUpdate(SchemaView, UpdateView):
+
+    def get_context_data(self, **kwargs):
+        data = super(SchemaUpdate, self).get_context_data(**kwargs)
+        if self.request.POST:
+            data['schema_columns'] = SchemaColumnFormSet(self.request.POST, instance=self.object)
+        else:
+            data['schema_columns'] = SchemaColumnFormSet(instance=self.object)
+        return data
+
+
+@method_decorator(login_required, name='dispatch')
+class SchemaDelete(DeleteView):
+    model = Schema
+    template_name = 'generator/confirm_delete.html'
+    success_url = "/"
