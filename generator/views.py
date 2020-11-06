@@ -6,6 +6,10 @@ from generator.models import Schema
 
 
 @method_decorator(login_required, name='dispatch')
-class SchemaView(ListView):
+class SchemasView(ListView):
+    def get_queryset(self):
+        return Schema.objects.filter(owner=self.request.user)
+
     template_name = 'schemas.html'
+    context_object_name = 'schemas'
     model = Schema
