@@ -54,6 +54,7 @@ class SchemaColumn(models.Model):
     text_number_of_sentences = models.PositiveSmallIntegerField(default=1)
     integer_range_from = models.PositiveSmallIntegerField(default=0)
     integer_range_to = models.PositiveSmallIntegerField(default=1)
+    order = models.PositiveSmallIntegerField(default=1)
 
     def __str__(self):
         return f'{self.column_name} column from {self.schema}'
