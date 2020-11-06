@@ -26,8 +26,6 @@ class SchemaForm(ModelForm):
                 Field('string_character'),
                 Fieldset('Schema Columns',
                          Formset('schema_columns')),
-                HTML("<br>"),
-
             )
         )
 
@@ -41,5 +39,5 @@ class SchemaColumnForm(ModelForm):
 SchemaColumnFormSet = inlineformset_factory(
     Schema, SchemaColumn, form=SchemaColumnForm,
     fields=['type', 'column_name', 'text_number_of_sentences',
-            'integer_range_from', 'integer_range_to', 'order'], extra=1, can_delete=True
+            'integer_range_from', 'integer_range_to'], extra=1, can_delete=True
     )

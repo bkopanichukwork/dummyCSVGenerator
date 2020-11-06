@@ -19,7 +19,8 @@ class SchemasList(ListView):
     model = Schema
 
 
-class SchemaView:
+@method_decorator(login_required, name='dispatch')
+class SchemaCreate(CreateView):
     model = Schema
     template_name = 'generator/schema_create.html'
     form_class = SchemaForm
@@ -37,10 +38,6 @@ class SchemaView:
                 schema_columns.save()
         return super(SchemaCreate, self).form_valid(form)
 
-
-@method_decorator(login_required, name='dispatch')
-class SchemaCreate(SchemaView, CreateView):
-
     def get_context_data(self, **kwargs):
         data = super(SchemaCreate, self).get_context_data(**kwargs)
         if self.request.POST:
@@ -51,7 +48,23 @@ class SchemaCreate(SchemaView, CreateView):
 
 
 @method_decorator(login_required, name='dispatch')
-class SchemaUpdate(SchemaView, UpdateView):
+class SchemaUpdate(UpdateView):
+    model = Schema
+    template_name = 'generator/schema_create.html'
+    form_class = SchemaForm
+    success_url = '/'
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        schema_columns = context['schema_columns']
+        with transaction.atomic():
+            form.instance.owner = self.request.user
+            form.instance.date_modified = datetime.now()
+            self.object = form.save()
+            if schema_columns.is_valid():
+                schema_columns.instance = self.object
+                schema_columns.save()
+        return super(SchemaUpdate, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
         data = super(SchemaUpdate, self).get_context_data(**kwargs)

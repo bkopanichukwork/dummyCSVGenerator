@@ -8,9 +8,9 @@
             <div class="modal-body">
                 <form action="" method="post">
                     {% csrf_token %}
-                    <h4>
-                        Are you sure you want to delete: <strong>Schema ID {{ object }}</strong> ?
-                    </h4>
+                    <h5>
+                        Are you sure you want to delete: <strong>Schema {{ object }}</strong> ?
+                    </h5>
                     <input  class="btn btn-danger" type="submit" value="Yes, I want to delete" />
                 </form>
             </div>

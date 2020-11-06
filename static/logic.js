@@ -1,52 +1,75 @@
-function getColumnTypeElem1(column_id){
 
-    var type_block_id = "div_id_schemacolumn_set-"+column_id+"-type";
+function getColumnTypeElem1(column_id, prefix="schemacolumn_set"){
+    var type_block_id = "div_id_"+prefix+"-"+column_id+"-type";
     return document.getElementById(type_block_id);
 }
-function getColumnTypeElem2(column_id){
-    return document.getElementById("schemacolumn_set-"+column_id+"-id_schemacolumn_set-0-type");
+
+function getColumnTypeElem2(column_id, prefix="schemacolumn_set"){
+    var t = document.getElementById(prefix+"-"+column_id+"-id_"+prefix+"-0-type");
+    if(t==null)
+        t = document.getElementById(prefix+"-"+column_id+"-id_"+prefix+"-1-type");
+    return t;
 }
 function getColumnTypeElem(column_id){
-    if(getColumnTypeElem1==null)
-        return getColumnTypeElem2;
-    return getColumnTypeElem1;
+    if(getColumnTypeElem1(column_id)=null)
+        return getColumnTypeElem2(column_id);
+    return getColumnTypeElem1(column_id);
 }
-function getColumnTypeValue(column_id){
-    var type_field_id = "id_schemacolumn_set-"+column_id+"-type";
-    var type_field_id2 = "schemacolumn_set-"+column_id+"-id_schemacolumn_set-0-type";
 
+function getColumnTypeValue(column_id, prefix="schemacolumn_set"){
+    var type_field_id = "id_"+prefix+"-"+column_id+"-type";
     var column_type_elem =  document.getElementById(type_field_id);
-    var column_type_elem2 =  document.getElementById(type_field_id2);
-
     if (column_type_elem == null){
-        if (column_type_elem2 == null)return -1;
-        return column_type_elem2.value;
+        type_field_id = prefix+"-"+column_id+"-id_"+prefix+"-0-type";
+        column_type_elem = document.getElementById(type_field_id);
+        if(column_type_elem == null)
+            column_type_elem = document.getElementById(prefix+"-"+column_id+"-id_"+prefix+"-1-type");
     }
+    if (column_type_elem == null)
+        return -1;
     return column_type_elem.value;
 }
 
 function updateOptionalFields(){
-console.log("here");
-    var optional_fields_suffixes = ['text_number_of_sentences', 'integer_range_to', 'integer_range_from'];
-    var optional_fields_show_on = [6,2,2];
+    var prefix="schemacolumn_set";
+    var inputs = document.getElementsByTagName("input");
+    for (var i = 0; i < inputs.length; i++) {
+        inputs[i].required = true;
+    }
+
+    var optional_fields_suffixes = ['text_number_of_sentences', 'integer_range_to', 'integer_range_from'],
+        optional_fields_show_on = [6,2,2];
+
     var id = 0;
     var column_type = getColumnTypeValue(id);
     while(column_type != -1){
         for(var optional_id = 0; optional_id < 3; optional_id ++){
-
-            var elem_id = 'div_id_schemacolumn_set-'+id+'-'+optional_fields_suffixes[optional_id];
+            let field = optional_fields_suffixes[optional_id];
+            var elem_id = 'div_id_'+prefix+'-'+id+'-'+field;
             var elem = document.getElementById(elem_id);
-            var elem_id2 = 'schemacolumn_set-'+id+'-div_id_schemacolumn_set-0-'+optional_fields_suffixes[optional_id];
-            var elem2 = document.getElementById(elem_id2);
-            console.log(elem_id2);
-            if(column_type == optional_fields_show_on[optional_id]){
-                if(elem) elem.style.display = "block";
-                if(elem2) elem2.style.display = "block";
-            }else{
-                console.log(id, column_type, optional_id);
-                console.log(elem==null, elem2==null);
-                if(elem) elem.style.display = "none";
-                if(elem2) elem2.style.display = "none";
+            console.log(elem_id);
+            if(!elem){
+                elem_id = prefix+'-'+id+'-div_id_'+prefix+'-0-'+field;
+                elem = document.getElementById(elem_id);
+                if(!elem)
+                    elem = document.getElementById(prefix+'-'+id+'-div_id_'+prefix+'-1-'+field);
+            }
+
+            if (elem != null){
+                if(column_type == optional_fields_show_on[optional_id]){
+                    elem.style.display = "block";
+                    var inputs = elem.getElementsByTagName("input");
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].required = true;
+                    }
+                }
+                else{
+                   elem.style.display = "none";
+                   var inputs = elem.getElementsByTagName("input");
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].required = false;
+                    }
+                }
             }
         }
         id ++;
@@ -115,15 +138,8 @@ window.onload = function(){
                     row.append('<a class="' + options.deleteCssClass + '" href="javascript:void(0)">' + options.deleteText +'</a>');
                 }
                 row.find('a.' + options.deleteCssClass).click(function() {
-                    var row = $(this).parents('.' + options.formCssClass),
-                        del = row.find('input:hidden[id $= "-DELETE"]');
-                    if (del.length) {
-                        // We're dealing with an inline formset; rather than remove
-                        // this form from the DOM, we'll mark it as deleted and hide
-                        // it, then let Django handle the deleting:
-                        del.val('on');
-                        row.hide();
-                    } else {
+                    var row = $(this).parents('.' + options.formCssClass);
+
                         row.remove();
                         // Update the TOTAL_FORMS form count.
                         // Also update names and IDs for all remaining form controls so they remain in sequence:
@@ -134,7 +150,7 @@ window.onload = function(){
                             forms.eq(i).find('input,select,textarea,label,div').each(function() {
                                 updateElementIndex($(this), options.prefix, i);
                             });
-                        }
+
                     }
                     // If a post-delete callback was provided, call it with the deleted form:
                     if (options.removed) options.removed(row);
@@ -145,6 +161,7 @@ window.onload = function(){
         $$.each(function(i) {
             var row = $(this),
                 del = row.find('input:checkbox[id $= "-DELETE"]');
+                del.hide();
             if (del.length) {
                 // If you specify "can_delete = True" when creating an inline formset,
                 // Django adds a checkbox to each form in the formset.
@@ -178,6 +195,9 @@ window.onload = function(){
                     var elem = $(this);
                     // If this is a checkbox or radiobutton, uncheck it.
                     // This fixes Issue 1, reported by Wilson.Andrew.J:
+                    if (elem.is('input')){
+                        elem.attr('required');
+                    }
                     if (elem.is('input:checkbox') || elem.is('input:radio')) {
                         elem.attr('checked', false);
                     } else {
@@ -210,7 +230,6 @@ window.onload = function(){
                 applyExtraClasses(row, formCount);
                 row.insertBefore($(buttonRow)).show();
                 row.find('input,select,textarea,label,div').each(function() {
-                    console.log(options.prefix, formCount);
                     updateElementIndex($(this), options.prefix, formCount);
                 });
                 $('#id_' + options.prefix + '-TOTAL_FORMS').val(formCount + 1);
