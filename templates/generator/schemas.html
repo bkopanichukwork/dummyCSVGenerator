@@ -26,9 +26,9 @@
     <tr>
          <th scope="row">{{schema.pk}}</th>
           <td>
-              <a href="#">{{schema.name}}</a>
+              <a href="{% url 'datasets_list' schema.pk%}">{{schema.name}}</a>
           </td>
-          <td>{{schema.date_modified|date:'Y-m-d H:i'}}</td>
+          <td>{{schema.date_modified|date:'Y-m-d'}}</td>
           <td>
               <a href="{% url 'schema_update' schema.pk%}">Edit scheme</a>
               <a href="{% url 'schema_delete' schema.pk%}" class="text-danger">Delete scheme</a>

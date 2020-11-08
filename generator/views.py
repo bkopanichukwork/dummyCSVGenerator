@@ -2,11 +2,33 @@ from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.http import Http404
+from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from generator.forms import SchemaForm, SchemaColumnFormSet
-from generator.models import Schema
+from generator.models import Schema, DataSet
+from generator.tasks import generate_csv
+
+
+@login_required
+def generate_dataset(request, *args, **kwargs):
+    if request.POST:
+        print(request.POST)
+        schema_pk = request.POST.get("schema")
+        schema = Schema.objects.get(pk=int(schema_pk))
+        row_count = request.POST.get("row_count")
+        task = generate_csv.delay(30)
+        print(row_count)
+
+        DataSet.objects.create(schema=schema,
+                               row_count=row_count,
+                               celery_task_id=task.task_id)
+
+        return render(request, 'test.html', context={'task_id': task.task_id})
+    else:
+        raise Http404()
 
 
 @method_decorator(login_required, name='dispatch')
@@ -16,6 +38,21 @@ class SchemasList(ListView):
 
     template_name = 'generator/schemas.html'
     context_object_name = 'schemas'
+    model = Schema
+
+
+@method_decorator(login_required, name='dispatch')
+class DataSetsList(ListView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["schema"] = self.kwargs['schema']
+        return context
+
+    def get_queryset(self):
+        return DataSet.objects.filter(schema=self.kwargs['schema'])
+
+    template_name = 'generator/datasets.html'
+    context_object_name = 'datasets'
     model = Schema
 
 
@@ -36,14 +73,14 @@ class SchemaCreate(CreateView):
             if schema_columns.is_valid():
                 schema_columns.instance = self.object
                 schema_columns.save()
-        return super(SchemaCreate, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
-        data = super(SchemaCreate, self).get_context_data(**kwargs)
+        data = super().get_context_data(**kwargs)
         if self.request.POST:
-            data['schema_columns'] = SchemaColumnFormSet(self.request.POST)
+            data['schema_columns'] = SchemaColumnFormSet(self.request.POST, instance=self.object)
         else:
-            data['schema_columns'] = SchemaColumnFormSet()
+            data['schema_columns'] = SchemaColumnFormSet(instance=self.object)
         return data
 
 
@@ -64,10 +101,10 @@ class SchemaUpdate(UpdateView):
             if schema_columns.is_valid():
                 schema_columns.instance = self.object
                 schema_columns.save()
-        return super(SchemaUpdate, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
-        data = super(SchemaUpdate, self).get_context_data(**kwargs)
+        data = super().get_context_data(**kwargs)
         if self.request.POST:
             data['schema_columns'] = SchemaColumnFormSet(self.request.POST, instance=self.object)
         else:

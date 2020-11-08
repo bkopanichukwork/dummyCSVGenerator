@@ -1,0 +1,50 @@
+{% extends  'generator/base.html' %}
+
+{% block main %}
+
+ <div class="row col-12  justify-content-md-center">
+    <div class="col-8">
+         <h3>Data sets</h3>
+    </div>
+    <div class="col-4">
+
+        <form method="POST" action="{%url 'generate_dataset' schema%}">
+            <div class="form-group row">
+                {% csrf_token %}
+                <input type="hidden" name="schema" value="{{schema}}">
+                <label for="row_count" class="col-sm-2 col-form-label">Rows:</label>
+                <input type="text" id="row_count" name="row_count" required>
+                <input type="submit" class="btn btn-success" value="Generate data">
+            </div>
+        </form>
+    </div>
+ </div>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Created</th>
+      <th scope="col">Rows</th>
+      <th scope="col">Status</th>
+      <th scope="col">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    {% for dataset in datasets %}
+    <tr>
+        <th scope="row">{{dataset.pk}}</th>
+        <td>{{dataset.date_modified|date:'Y-m-d'}}</td>
+        <td>{{dataset.row_count}}</td>
+        <td>{{dataset.celery_task_id}}</td>
+        <td>
+          <a href="#">Download</a>
+        </td>
+    </tr>
+    {% endfor %}
+
+  </tbody>
+</table>
+
+{% endblock %}
