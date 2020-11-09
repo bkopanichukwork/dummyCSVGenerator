@@ -13,9 +13,11 @@ class CsvSeparator(models.Model):
 class Schema(models.Model):
     SINGLE_QUOTE = "\'"
     DOUBLE_QUOTE = "\""
+    NO_QUOTE = ""
     QUOTES = (
         (SINGLE_QUOTE, "Single-quote(\')"),
         (DOUBLE_QUOTE, "Double-quote(\")"),
+        (NO_QUOTE, "No-quote"),
     )
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -63,6 +65,6 @@ class SchemaColumn(models.Model):
 class DataSet(models.Model):
     schema = models.ForeignKey(Schema, on_delete=models.CASCADE)
     row_count = models.IntegerField(default=10)
-    celery_task_id = models.CharField(max_length=255)
-    result_file_url = models.URLField(max_length=255,blank=True)
+    celery_task_id = models.CharField(max_length=255, blank=True)
+    result_file_url = models.URLField(max_length=255, blank=True)
     date_modified = models.DateTimeField(auto_now_add=True)

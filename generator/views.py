@@ -3,30 +3,23 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from generator.forms import SchemaForm, SchemaColumnFormSet
 from generator.models import Schema, DataSet
-from generator.tasks import generate_csv
+from generator.services import create_random_dataset
 
 
 @login_required
 def generate_dataset(request, *args, **kwargs):
     if request.POST:
-        print(request.POST)
-        schema_pk = request.POST.get("schema")
-        schema = Schema.objects.get(pk=int(schema_pk))
-        row_count = request.POST.get("row_count")
-        task = generate_csv.delay(30)
-        print(row_count)
-
-        DataSet.objects.create(schema=schema,
-                               row_count=row_count,
-                               celery_task_id=task.task_id)
-
-        return render(request, 'test.html', context={'task_id': task.task_id})
+        schema_id = request.POST.get("schema")
+        row_count = int(request.POST.get("row_count"))
+        create_random_dataset(schema_id=schema_id,
+                              row_count=row_count)
+        return redirect('datasets_list', schema=schema_id)
     else:
         raise Http404()
 
