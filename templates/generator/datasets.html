@@ -3,17 +3,17 @@
 {% block main %}
 
  <div class="row col-12  justify-content-md-center">
-    <div class="col-8">
+    <div class="col-6">
          <h3>Data sets</h3>
     </div>
-    <div class="col-4">
+    <div class="col-6">
 
         <form method="POST" action="{%url 'generate_dataset' schema%}">
             <div class="form-group row">
                 {% csrf_token %}
                 <input type="hidden" name="schema" value="{{schema}}">
                 <label for="row_count" class="col-sm-2 col-form-label">Rows:</label>
-                <input type="text" id="row_count" name="row_count" required>
+                <input type="number" min="0" id="row_count" name="row_count" required>
                 <input type="submit" class="btn btn-success" value="Generate data">
             </div>
         </form>

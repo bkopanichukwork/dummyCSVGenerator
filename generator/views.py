@@ -1,7 +1,4 @@
-from datetime import datetime
-
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
@@ -9,7 +6,10 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from generator.forms import SchemaForm, SchemaColumnFormSet
 from generator.models import Schema, DataSet
-from generator.services import create_random_dataset
+
+from generator.services import create_random_dataset, \
+                               process_schema_form, \
+                               check_user_schema_permission
 
 
 @login_required
@@ -29,27 +29,29 @@ def generate_dataset(request, *args, **kwargs):
 
 @method_decorator(login_required, name='dispatch')
 class SchemasList(ListView):
-    def get_queryset(self):
-        return Schema.objects.filter(owner=self.request.user)
-
     template_name = 'generator/schemas.html'
     context_object_name = 'schemas'
     model = Schema
 
+    def get_queryset(self):
+        return Schema.objects.filter(owner=self.request.user)
+
 
 @method_decorator(login_required, name='dispatch')
 class DataSetsList(ListView):
+    template_name = 'generator/datasets.html'
+    context_object_name = 'datasets'
+    model = Schema
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["schema"] = self.kwargs['schema']
         return context
 
     def get_queryset(self):
-        return DataSet.objects.filter(schema=self.kwargs['schema'])
-
-    template_name = 'generator/datasets.html'
-    context_object_name = 'datasets'
-    model = Schema
+        schema = self.kwargs['schema']
+        check_user_schema_permission(schema, self.request.user)
+        return DataSet.objects.filter(schema=schema)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -62,21 +64,15 @@ class SchemaCreate(CreateView):
     def form_valid(self, form):
         context = self.get_context_data()
         schema_columns = context['schema_columns']
-        with transaction.atomic():
-            form.instance.owner = self.request.user
-            form.instance.date_modified = datetime.now()
-            self.object = form.save()
-            if schema_columns.is_valid():
-                schema_columns.instance = self.object
-                schema_columns.save()
+        process_schema_form(form, schema_columns, self.request.user)
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         if self.request.POST:
-            data['schema_columns'] = SchemaColumnFormSet(self.request.POST, instance=self.object)
+            data['schema_columns'] = SchemaColumnFormSet(self.request.POST)
         else:
-            data['schema_columns'] = SchemaColumnFormSet(instance=self.object)
+            data['schema_columns'] = SchemaColumnFormSet()
         return data
 
 
@@ -88,21 +84,14 @@ class SchemaUpdate(UpdateView):
     success_url = '/'
 
     def get_object(self, queryset=None):
-        obj = super(SchemaUpdate, self).get_object()
-        if not obj.owner == self.request.user:
-            raise Http404()
-        return obj
+        schema = super(SchemaUpdate, self).get_object()
+        check_user_schema_permission(schema.pk, self.request.user)
+        return schema
 
     def form_valid(self, form):
         context = self.get_context_data()
         schema_columns = context['schema_columns']
-        with transaction.atomic():
-            form.instance.owner = self.request.user
-            form.instance.date_modified = datetime.now()
-            self.object = form.save()
-            if schema_columns.is_valid():
-                schema_columns.instance = self.object
-                schema_columns.save()
+        process_schema_form(form, schema_columns, self.request.user)
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -121,7 +110,6 @@ class SchemaDelete(DeleteView):
     success_url = "/"
 
     def get_object(self, queryset=None):
-        obj = super(SchemaUpdate, self).get_object()
-        if not obj.owner == self.request.user:
-            raise Http404()
-        return obj
+        schema = super(SchemaDelete, self).get_object()
+        check_user_schema_permission(schema.pk, self.request.user)
+        return schema

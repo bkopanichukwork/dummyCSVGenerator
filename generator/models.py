@@ -18,7 +18,7 @@ class Schema(models.Model):
     """
     SINGLE_QUOTE = "\'"
     DOUBLE_QUOTE = "\""
-    NO_QUOTE = ""
+    NO_QUOTE = " "
     QUOTES = (
         (SINGLE_QUOTE, "Single-quote(\')"),
         (DOUBLE_QUOTE, "Double-quote(\")"),
@@ -64,10 +64,10 @@ class SchemaColumn(models.Model):
     schema = models.ForeignKey(Schema, on_delete=models.CASCADE)
     column_name = models.CharField(max_length=255)
     type = models.PositiveSmallIntegerField(choices=TYPES, default=FULL_NAME)
-    text_number_of_sentences = models.PositiveSmallIntegerField(default=1)
-    integer_range_from = models.PositiveSmallIntegerField(default=0)
-    integer_range_to = models.PositiveSmallIntegerField(default=1)
-    order = models.PositiveSmallIntegerField(default=1)
+    text_number_of_sentences = models.PositiveSmallIntegerField(default=1, blank=True)
+    integer_range_from = models.PositiveSmallIntegerField(default=0, blank=True)
+    integer_range_to = models.PositiveSmallIntegerField(default=10, blank=True)
+    order = models.IntegerField(default=1)
 
     def __str__(self):
         return f'{self.column_name} column from {self.schema}'

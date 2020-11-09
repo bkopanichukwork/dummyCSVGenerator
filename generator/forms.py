@@ -36,8 +36,12 @@ class SchemaColumnForm(ModelForm):
         exclude = ()
 
 
-SchemaColumnFormSet = inlineformset_factory(
-    Schema, SchemaColumn, form=SchemaColumnForm,
-    fields=['type', 'column_name', 'text_number_of_sentences',
-            'integer_range_from', 'integer_range_to'], extra=1, can_delete=True
-    )
+class SchemaColumnFormSet(inlineformset_factory(
+                        Schema, SchemaColumn, form=SchemaColumnForm,
+                        fields=['type', 'column_name', 'text_number_of_sentences',
+                                'integer_range_from', 'integer_range_to'],
+                        extra=1, can_delete=True, can_order=True
+                        )):
+    def __init__(self, *args, **kwargs):
+        super(SchemaColumnFormSet, self).__init__(*args, **kwargs)
+        self.queryset = self.queryset.order_by('order')
