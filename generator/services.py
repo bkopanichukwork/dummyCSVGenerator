@@ -27,7 +27,8 @@ def create_random_dataset(schema_id: int, row_count: int) -> None:
                                 row_count=row_count)
 
     task = _generate_random_csv_file.delay(schema_id, row_count, ds.pk)
-    ds.task_id = task.task_id
+    print(task.task_id)
+    ds.celery_task_id = task.task_id
     ds.save()
 
 

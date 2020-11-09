@@ -14,6 +14,9 @@ from generator.services import create_random_dataset
 
 @login_required
 def generate_dataset(request, *args, **kwargs):
+    """
+    Service that generates new dataset by given data schema and rows count
+    """
     if request.POST:
         schema_id = request.POST.get("schema")
         row_count = int(request.POST.get("row_count"))
@@ -84,6 +87,12 @@ class SchemaUpdate(UpdateView):
     form_class = SchemaForm
     success_url = '/'
 
+    def get_object(self, queryset=None):
+        obj = super(SchemaUpdate, self).get_object()
+        if not obj.owner == self.request.user:
+            raise Http404()
+        return obj
+
     def form_valid(self, form):
         context = self.get_context_data()
         schema_columns = context['schema_columns']
@@ -110,3 +119,9 @@ class SchemaDelete(DeleteView):
     model = Schema
     template_name = 'generator/confirm_delete.html'
     success_url = "/"
+
+    def get_object(self, queryset=None):
+        obj = super(SchemaUpdate, self).get_object()
+        if not obj.owner == self.request.user:
+            raise Http404()
+        return obj

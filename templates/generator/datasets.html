@@ -39,7 +39,7 @@
         <td>{{dataset.row_count}}</td>
         <td>{{dataset.celery_task_id}}</td>
         <td>
-          <a href="#">Download</a>
+          <a href="{{dataset.result_file_url}}" download="{{dataset.result_file_url}}">Download</a>
         </td>
     </tr>
     {% endfor %}
