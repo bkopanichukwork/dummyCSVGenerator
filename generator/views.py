@@ -51,7 +51,7 @@ class DataSetsList(ListView):
     def get_queryset(self):
         schema = self.kwargs['schema']
         check_user_schema_permission(schema, self.request.user)
-        return DataSet.objects.filter(schema=schema)
+        return DataSet.objects.filter(schema=schema).order_by('pk')
 
 
 @method_decorator(login_required, name='dispatch')

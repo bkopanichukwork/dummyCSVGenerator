@@ -5,9 +5,11 @@ from typing import Union
 
 from celery import shared_task
 from celery_progress.backend import ProgressRecorder
+
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.core.files.storage import default_storage
 from faker import Faker
 
 from generator.models import Schema, DataSet, SchemaColumn
@@ -46,32 +48,34 @@ def _generate_random_csv_file(self, schema_id: int, row_count: int, dataset_id: 
             dataset_id (int): id of dataset in database
     """
     schema = Schema.objects.get(pk=schema_id)
-    columns = list(SchemaColumn.objects.filter(schema=schema)).ordered_by('order')
+    columns = list(SchemaColumn.objects.filter(schema=schema).order_by('order'))
 
-    file_name = f"schema_{schema.name}_data_set_{dataset_id}.csv"
-    new_csv = os.path.join(settings.MEDIA_ROOT, file_name)
-
+    new_csv = f"schema_{schema.name}_data_set_{dataset_id}.csv"
 
     if schema.string_character == schema.NO_QUOTE:
-        quoting = csv.QUOTE_NONE
+        quotechar = ""
+        quoting = csv.QUOTE_MINIMAL
     else:
+        quotechar = schema.string_character
         quoting = csv.QUOTE_NONNUMERIC
 
-    with open(new_csv, 'w', newline='') as file:
+    progress = ProgressRecorder(self)
+    with default_storage.open(new_csv, 'w') as file:
         csv_writer = csv.writer(file,
                                 delimiter=schema.column_separator.separator,
-                                quotechar=schema.string_character,
-                                quoting=quoting
+                                quotechar=quotechar,
+                                quoting=quoting,
                                 )
         # generate header
         csv_writer.writerow([col.column_name for col in columns])
         # generate all rows
         for row in range(row_count):
+            progress.set_progress(row + 1, row_count)
             csv_writer.writerow([_generate_random_value_of_cell(col)
                                  for col in columns])
 
     dataset = DataSet.objects.get(pk=dataset_id)
-    dataset.result_file_url = os.path.join(settings.MEDIA_URL, file_name)
+    dataset.result_file_url = os.path.join(settings.MEDIA_URL, new_csv)
     dataset.save()
 
     return None
