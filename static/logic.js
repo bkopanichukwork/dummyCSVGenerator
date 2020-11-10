@@ -18,20 +18,32 @@ function updateOptionalFields(){
             if(cell.id.endsWith('text_number_of_sentences')){
                 if (type == 6) {//Type - text
                     cell.style.display = "block";
-                    cell.required = true;
+                    var inputs = cell.getElementsByTagName("input");
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].required = true;
+                    }
                 }else{
                     cell.style.display = "none";
-                    cell.required = false;
+                    var inputs = cell.getElementsByTagName("input");
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].required = false;
+                    }
                 }
 
             }
             if(cell.id.endsWith('integer_range_to') || cell.id.endsWith('integer_range_from') ){
                 if (type == 2) {//Type - integer
                     cell.style.display = "block";
-                    cell.required = true;
+                    var inputs = cell.getElementsByTagName("input");
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].required = true;
+                    }
                 }else
                     cell.style.display = "none";
-                    cell.required = false;
+                    var inputs = cell.getElementsByTagName("input");
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].required = false;
+                    }
             }
             if(cell.firstElementChild && cell.firstElementChild.id.endsWith("DELETE")){
                  cell.style.display="none";
