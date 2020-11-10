@@ -1,87 +1,59 @@
 
-function getColumnTypeElem1(column_id, prefix="schemacolumn_set"){
-    var type_block_id = "div_id_"+prefix+"-"+column_id+"-type";
-    return document.getElementById(type_block_id);
-}
-
-function getColumnTypeElem2(column_id, prefix="schemacolumn_set"){
-    var t = document.getElementById(prefix+"-"+column_id+"-id_"+prefix+"-0-type");
-    if(t==null)
-        t = document.getElementById(prefix+"-"+column_id+"-id_"+prefix+"-1-type");
-    return t;
-}
-function getColumnTypeElem(column_id){
-    if(getColumnTypeElem1(column_id)=null)
-        return getColumnTypeElem2(column_id);
-    return getColumnTypeElem1(column_id);
-}
-
-function getColumnTypeValue(column_id, prefix="schemacolumn_set"){
-    var type_field_id = "id_"+prefix+"-"+column_id+"-type";
-    var column_type_elem =  document.getElementById(type_field_id);
-    if (column_type_elem == null){
-        type_field_id = prefix+"-"+column_id+"-id_"+prefix+"-0-type";
-        column_type_elem = document.getElementById(type_field_id);
-        if(column_type_elem == null)
-            column_type_elem = document.getElementById(prefix+"-"+column_id+"-id_"+prefix+"-1-type");
-    }
-    if (column_type_elem == null)
-        return -1;
-    return column_type_elem.value;
-}
-
 function updateOptionalFields(){
-    var prefix="schemacolumn_set";
+    const prefix="schemacolumn_set";
     var inputs = document.getElementsByTagName("input");
     for (var i = 0; i < inputs.length; i++) {
         inputs[i].required = true;
     }
 
-    var optional_fields_suffixes = ['text_number_of_sentences', 'integer_range_to', 'integer_range_from'],
-        optional_fields_show_on = [6,2,2];
+    var inline_rows = document.getElementsByClassName("formset_row-"+prefix+" dynamic-form");
+    for (const row of inline_rows) {
+        let type = 1;
+        cells = row.querySelectorAll("td");
+        for(let cell of cells){
+            cell = cell.getElementsByTagName("div")[0];
+            if(cell.id.endsWith("type")){
+               type = cell.lastElementChild.getElementsByTagName("select")[0].value;
+            }
+            if(cell.id.endsWith('text_number_of_sentences')){
+                if (type == 6) {//Type - text
+                    cell.style.display = "block";
+                    cell.required = true;
+                }else{
+                    cell.style.display = "none";
+                    cell.required = false;
+                }
 
-    var id = 0;
-    var column_type = getColumnTypeValue(id);
-    while(column_type != -1){
-        for(var optional_id = 0; optional_id < 3; optional_id ++){
-            let field = optional_fields_suffixes[optional_id];
-            var elem_id = 'div_id_'+prefix+'-'+id+'-'+field;
-            var elem = document.getElementById(elem_id);
-            console.log(elem_id);
-            if(!elem){
-                elem_id = prefix+'-'+id+'-div_id_'+prefix+'-0-'+field;
-                elem = document.getElementById(elem_id);
-                if(!elem)
-                    elem = document.getElementById(prefix+'-'+id+'-div_id_'+prefix+'-1-'+field);
+            }
+            if(cell.id.endsWith('integer_range_to') || cell.id.endsWith('integer_range_from') ){
+                if (type == 2) {//Type - integer
+                    cell.style.display = "block";
+                    cell.required = true;
+                }else
+                    cell.style.display = "none";
+                    cell.required = false;
+            }
+            if(cell.firstElementChild && cell.firstElementChild.id.endsWith("DELETE")){
+                 cell.style.display="none";
             }
 
-            if (elem != null){
-                if(column_type == optional_fields_show_on[optional_id]){
-                    elem.style.display = "block";
-                    var inputs = elem.getElementsByTagName("input");
-                    for (var i = 0; i < inputs.length; i++) {
-                        inputs[i].required = true;
-                    }
-                }
-                else{
-                   elem.style.display = "none";
-                   var inputs = elem.getElementsByTagName("input");
-                    for (var i = 0; i < inputs.length; i++) {
-                        inputs[i].required = false;
-                    }
-                }
-            }
         }
-        id ++;
-        column_type = getColumnTypeValue(id);
+    }
+}
+
+function setUpdatesTracking(){
+    const prefix="schemacolumn_set";
+    var inline_rows = document.getElementsByClassName("formset_row-"+prefix+" dynamic-form");
+    for (let row of inline_rows) {
+        typeBlock = row.querySelectorAll("td")[0].lastElementChild;
+        typeSelect = typeBlock.getElementsByTagName("select")[0];
+        typeSelect.onchange = updateOptionalFields;
     }
 }
 
 window.onload = function(){
     updateOptionalFields();
-    let id = 0;
-    if(getColumnTypeElem1(id)!=null) getColumnTypeElem1(id).onchange = updateOptionalFields;
-    if(getColumnTypeElem2(id)!=null) getColumnTypeElem2(id).onchange = updateOptionalFields;
+    setUpdatesTracking();
 
 
 };
@@ -237,12 +209,7 @@ window.onload = function(){
 
                 if (options.added) options.added(row);
                 updateOptionalFields();
-                let id = 0;
-                while(id<=formCount){
-                    if(getColumnTypeElem1(id)!=null) getColumnTypeElem1(id).onchange = updateOptionalFields;
-                    if(getColumnTypeElem2(id)!=null) getColumnTypeElem2(id).onchange = updateOptionalFields;
-                    id ++;
-                }
+                setUpdatesTracking();
                 return false;
             });
         }

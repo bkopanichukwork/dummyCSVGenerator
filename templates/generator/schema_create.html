@@ -1,28 +1,9 @@
 {% extends "generator/base.html" %}
 {% block main %}
-<!--<div class="container">-->
-<!--    <div class="card">-->
-<!--        <div class="card-header">-->
-<!--           <h3>New Schema</h3>-->
-<!--        </div>-->
-<!--        <div class="card-body">-->
-<!--            <form method="post">{% csrf_token %}-->
-<!--                <button type="submit" class="btn btn-primary" >Sumbit</button>-->
-<!--                {{ form.as_p }}-->
-<!--            </form>-->
-
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
-
 {% load crispy_forms_tags %}
-        <div class="card-header">
-            <h4>New schema</h4>
-        </div>
+        <h4 align="left">New schema</h4>
+
         <div class="card-body">
              {% crispy form %}
         </div>
-
-
-
 {% endblock main %}
