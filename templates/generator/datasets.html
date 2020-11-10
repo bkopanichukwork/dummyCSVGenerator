@@ -33,17 +33,32 @@
   <tbody>
 
     {% for dataset in datasets %}
+
     <tr>
         <th scope="row">{{dataset.pk}}</th>
         <td>{{dataset.date_modified|date:'Y-m-d'}}</td>
         <td>{{dataset.row_count}}</td>
-        <td>{{dataset.celery_task_id}}</td>
         <td>
-          <a href="{{dataset.result_file_url}}" download="{{dataset.result_file_url}}">Download</a>
+            {% if dataset.celery_task_status == 'Ready' %}
+                <div class="btn btn-success">{{dataset.celery_task_status}}</div>
+            {% elif dataset.celery_task_status == 'Failure' %}
+                <div class="btn btn-danger">{{dataset.celery_task_status}}</div>
+            {% else %}
+                <div class="btn btn-secondary">{{dataset.celery_task_status}}</div>
+            {% endif %}
+        </td>
+        <td>
+            {% if dataset.celery_task_status == 'Ready' %}
+                <a href="{{dataset.result_file_url}}" download="{{dataset.result_file_url}}">Download</a>
+            {% endif %}
         </td>
     </tr>
+
     {% endfor %}
   </tbody>
 </table>
+
+{%load static%}
+<script src="{% static 'celery_progress.js' %}"></script>
 
 {% endblock %}

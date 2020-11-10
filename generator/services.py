@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Union
 
 from celery import shared_task
-from celery_progress.backend import ProgressRecorder
 
 from django.db import transaction
 from django.http import Http404
@@ -30,15 +29,20 @@ def create_random_dataset(schema_id: int, row_count: int) -> None:
         return None
 
     ds = DataSet.objects.create(schema=schema,
-                                row_count=row_count)
-
-    task = _generate_random_csv_file.delay(schema_id, row_count, ds.pk)
-    print(task.task_id)
-    ds.celery_task_id = task.task_id
+                                row_count=row_count,
+                                celery_task_status="New")
     ds.save()
+    _generate_random_csv_file.delay(schema_id, row_count, ds.pk)
 
 
-@shared_task(bind=True)
+def _update_task_status_on_error(self, exc, task_id, args, kwargs, einfo):
+    dataset_id = args[2]
+    dataset = DataSet.objects.get(pk=dataset_id)
+    dataset.celery_task_status = "Failure"
+    dataset.save()
+
+
+@shared_task(bind=True, on_failure=_update_task_status_on_error)
 def _generate_random_csv_file(self, schema_id: int, row_count: int, dataset_id: int) -> None:
     """
     Generates new csv file with random data using specific data schema
@@ -49,33 +53,32 @@ def _generate_random_csv_file(self, schema_id: int, row_count: int, dataset_id: 
     """
     schema = Schema.objects.get(pk=schema_id)
     columns = list(SchemaColumn.objects.filter(schema=schema).order_by('order'))
+    dataset = DataSet.objects.get(pk=dataset_id)
+    dataset.celery_task_status = "Processing"
+    dataset.save()
 
-    new_csv = f"schema_{schema.name}_data_set_{dataset_id}.csv"
-
-    if schema.string_character == schema.NO_QUOTE:
-        quotechar = ""
-        quoting = csv.QUOTE_MINIMAL
-    else:
-        quotechar = schema.string_character
-        quoting = csv.QUOTE_NONNUMERIC
-
-    progress = ProgressRecorder(self)
+    new_csv = f"{schema.name}_data_set_{dataset_id}.csv"
     with default_storage.open(new_csv, 'w') as file:
-        csv_writer = csv.writer(file,
-                                delimiter=schema.column_separator.separator,
-                                quotechar=quotechar,
-                                quoting=quoting,
-                                )
+        if schema.string_character == schema.NO_QUOTE:
+            csv_writer = csv.writer(file,
+                                    delimiter=schema.column_separator.separator,
+                                    quoting=csv.QUOTE_MINIMAL,
+                                    )
+        else:
+            csv_writer = csv.writer(file,
+                                    delimiter=schema.column_separator.separator,
+                                    quotechar=schema.string_character,
+                                    quoting=csv.QUOTE_NONNUMERIC,
+                                    )
         # generate header
         csv_writer.writerow([col.column_name for col in columns])
         # generate all rows
         for row in range(row_count):
-            progress.set_progress(row + 1, row_count)
             csv_writer.writerow([_generate_random_value_of_cell(col)
                                  for col in columns])
 
-    dataset = DataSet.objects.get(pk=dataset_id)
     dataset.result_file_url = os.path.join(settings.MEDIA_URL, new_csv)
+    dataset.celery_task_status = "Ready"
     dataset.save()
 
     return None

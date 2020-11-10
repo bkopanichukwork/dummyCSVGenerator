@@ -18,8 +18,11 @@ def generate_dataset(request, *args, **kwargs):
     Service that generates new dataset by given data schema and rows count
     """
     if request.POST:
-        schema_id = request.POST.get("schema")
+        schema_id = int(request.POST.get("schema"))
         row_count = int(request.POST.get("row_count"))
+
+        check_user_schema_permission(schema_id, request.user)
+
         create_random_dataset(schema_id=schema_id,
                               row_count=row_count)
         return redirect('datasets_list', schema=schema_id)

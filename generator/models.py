@@ -80,6 +80,6 @@ class DataSet(models.Model):
     """
     schema = models.ForeignKey(Schema, on_delete=models.CASCADE)
     row_count = models.IntegerField(default=10)
-    celery_task_id = models.CharField(max_length=255, blank=True)
+    celery_task_status = models.CharField(max_length=255, blank=True)
     result_file_url = models.URLField(max_length=255, blank=True)
     date_modified = models.DateTimeField(auto_now_add=True)
